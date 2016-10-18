@@ -1,0 +1,516 @@
+*PPD-Adobe: "4.3"
+
+*% This PPD was written to use a Samsung SL-4020ND/XAA monochrome duplex laser
+*% printer with Linux and CUPS.
+*%
+*% Copyright (C) Glen Turner of Semaphore SA AU, 2016.
+*% <http://www.gdt.id.au/~gdt/>
+*% Licensed to you by the GNU Lesser General Public License version 2.1.
+*% For a copy of the license see
+*% <https://www.gnu.org/licenses/old-licenses/lgpl-2.1.txt>.
+*% If you need this file offered to you under another license then get in touch.
+
+*% Programming notes:
+*%
+*% The SL-M4020ND is a very capable monochrome laser printer. So the intent is
+*% that CUPS commands is to do the smallest amount of filtering possible and
+*% let the printer do the heavy lifting.
+*%
+*% There isn't much documentation on the printer, but the PJL has some
+*% introspection, so this PPD was reverse-engineered from PJL queries.
+*%
+*% The JCL/PJL commands were determined from
+*%   "Printer Job Language. Technical Reference Manual."
+*%   Hewlett-Packard.  Palo Alto, CA, USA.  12th ed, 2003-06.
+*%   HP publication number: 5021-0380
+*% and by connecting to the printer with
+*%   nc printer.example.com 9100
+*% and issuing the commands
+*%   @PJL INFO CONFIG
+*%   @PJL INFO VARIABLES
+*% and for each variable obtaining the shipped default with
+*%   @PJL DINQUIRE example
+*%
+*% Printer description files are described in
+*%   "PostScript Printer Description File Format Specification."
+*%   Adobe Systems Inc. San Jose, CA, USA. Version 4.3, 1996-02-09.
+*%   Adobe part number: LPS5003
+*%   Adobe technote: 5003
+*%
+*% The CUPS extensions to the PPD format are described at:
+*%   "CUPS PPD extensions."
+*%   <https://www.cups.org/doc/spec-ppd.html>
+*%   Apple Inc. Cupertino, CA, USA. Accessed 2016-10-17.
+*%
+*% The PPD specification gives these dependencies for the order of settings:
+*%   - resolution, before paper size and paper tray
+*%   - paper tray, before imageable area
+*%   - paper size and media selection
+*%   - duplex, tray switching, finishing, after paper size
+*%   - halftone, after paper size
+
+*% Increment the minor number when cutting a release.
+*FileVersion: "1.20160918"
+
+*FormatVersion: "4.3"
+*LanguageEncoding: ISOLatin1
+*LanguageVersion: English
+*% Product is the output of
+*%   statusdict begin product show end
+*Product: "(Samsung M332x 382x 402x Series)"
+*% PSVersion is the output of
+*%   statusdict begin version show revision 40 string cvs show end
+*% This was for SL-M4020ND firmware V4.00.02.10 released 2016-06-16 which claims
+*% a PostScript firmware version F5.53.01.47.01.70.08_160324:
+*PSVersion: "(3015) 0"
+*% This is from the PPD with Samsung's rasterising driver. Not sure how relevant
+*% that is:
+*PSVersion: "(3010.000) 550"
+*Manufacturer: "Samsung"
+*ModelName: "Samsung M332x 382x 402x Series"
+*NickName: "Samsung M332x 382x 402x Series v.3015"
+*ShortNickName: "Samsung M332x 382x 402x Series"
+*% CUPS reports this as the 'printer driver' name, so this is deliberately
+*% different from the Foomatic, Cupsomatic and Samsung names:
+*PCFileName: "SASLM402.PPD"
+
+*% CUPS filters
+*% We're trying to avoid any rasterisation on the print server. That makes
+*% my Raspberry Pi unhappily slow.
+*cupsFilter: "application/vnd.cups-postscript 0 -"
+*cupsFilter: "application/vnd.cups-pdf 0 -"
+
+*% Basic Device Capabilities
+*LanguageLevel: "3"
+*% The SL-M4020ND is only ever monochrome.
+*ColorDevice: False
+*DefaultColorSpace: Gray
+*% Marketing pages per minutes.
+*Throughput: "40"
+*% It's 2016, safe to assume TrueType support.
+*TTRasterizer: Type42
+
+*% System management
+*FreeVM: "30027776"
+*VMOption 256MB: "30027776"
+*% This is bogus, someone let me know the real number.
+*VMOption 512MB: "298463232"
+*PrintPSErrors: True
+
+*% Protocols
+*%  PJL is HP's printer job language
+*%  TBCP is Tagged Binary Communications Protocol, 8 bits over 7 bit channel.
+*%  BCP us Binnary Communications Protocol, for 8-bit clean paths.
+*%  The printer connects with USB and IP, both of which are 8-bit clean.
+*Protocols: PJL BCP
+
+*% JCL Information
+*% As per HP's printers.
+*JCLBegin: "<1B>%-12345X@PJL JOB<0A>"
+*JCLToPSInterpreter: "@PJL ENTER LANGUAGE=POSTSCRIPT<0A>"
+*JCLToPDFInterpreter: "@PJL ENTER LANGUAGE=PDF<0A>"
+*JCLEnd: "<1B>%-12345X@PJL EOJ<0A><1B>%-12345X"
+
+*OpenGroup: General/General
+
+*% Paper
+*JCLOpenUI *PageSize/Page size: PickOne
+*OrderDependency: 30 JCLSetup *PageSize
+*DefaultPageSize: A4
+*PageSize A4/A4: "@PJL SET PAPER=A4<0A>"
+*PageSize A5/A5: "@PJL SET PAPER=A5<0A>"
+*PageSize A6/A6: "@PJL SET PAPER=A6<0A>"
+*PageSize ISOB5/ISO B5: "@PJL SET PAPER=ISOB5<0A>"
+*PageSize B5/JIS B5: "@PJL SET PAPER=JISB5<0A>"
+*PageSize Executive/Executive: "@PJL SET PAPER=EXECUTIVE<0A>"
+*PageSize Folio/US Folio: "@PJL SET PAPER=FOLIO<0A>"
+*PageSize Legal/Legal: "@PJL SET PAPER=LEGAL<0A>"
+*PageSize Statement/Statement: "@PJL SET PAPER=STATEMENT<0A>"
+*PageSize Letter/Letter: "@PJL SET PAPER=LETTER<0A>"
+*PageSize Postcard/Post Card: "@PJL SET PAPER=POSTCARD4X6<0A>"
+*PageSize EnvC5/Envelope C5: "@PJL SET PAPER=C5<0A>"
+*PageSize EnvC6/Envelope C6: "@PJL SET PAPER=C6<0A>"
+*PageSize EnvDL/Envelope DL: "@PJL SET PAPER=DL<0A>"
+*PageSize EnvMonarch/Envelope Monarch: "@PJL SET PAPER=MONARCH<0A>"
+*PageSize Env9/Envelope No.9: "@PJL SET PAPER=NO9<0A>"
+*PageSize Env10/Envelope No.10: "@PJL SET PAPER=COM10<0A>"
+*JCLCloseUI: *PageSize
+
+*JCLOpenUI *PageRegion: PickOne
+*OrderDependency: 40 JCLSetup *PageSize
+*DefaultPageRegion: A4
+*PageRegion A4/A4: "@PJL SET PAPER=A4<0A>"
+*PageRegion A5/A5: "@PJL SET PAPER=A5<0A>"
+*PageRegion A6/A6: "@PJL SET PAPER=A6<0A>"
+*PageRegion ISOB5/ISO B5: "@PJL SET PAPER=ISOB5<0A>"
+*PageRegion B5/JIS B5: "@PJL SET PAPER=JISB5<0A>"
+*PageRegion Executive/Executive: "@PJL SET PAPER=EXECUTIVE<0A>"
+*PageRegion Folio/US Folio: "@PJL SET PAPER=FOLIO<0A>"
+*PageRegion Legal/Legal: "@PJL SET PAPER=LEGAL<0A>"
+*PageRegion Statement/Statement: "@PJL SET PAPER=STATEMENT<0A>"
+*PageRegion Letter/Letter: "@PJL SET PAPER=LETTER<0A>"
+*PageRegion Postcard/Post Card: "@PJL SET PAPER=POSTCARD4X6<0A>"
+*PageRegion EnvC5/Envelope C5: "@PJL SET PAPER=C5<0A>"
+*PageRegion EnvC6/Envelope C6: "@PJL SET PAPER=C6<0A>"
+*PageRegion EnvDL/Envelope DL: "@PJL SET PAPER=DL<0A>"
+*PageRegion EnvMonarch/Envelope Monarch: "@PJL SET PAPER=MONARCH<0A>"
+*PageRegion Env9/Envelope No.9: "@PJL SET PAPER=NO9<0A>"
+*PageRegion Env10/Envelope No.10: "@PJL SET PAPER=COM10<0A>"
+*JCLCloseUI: *PageRegion
+
+*% These entries provide the imageable areas of the media option keywords
+*DefaultImageableArea: A4
+*ImageableArea A4/A4: "12.5 12.5 582.5 829.5"
+*ImageableArea A5/A5: "12.5 12.5 407.5 582.5"
+*ImageableArea A6/A6: "12.5 12.5 284.5 407.5"
+*ImageableArea ISOB5/ISO B5: "12.5 12.5 486.5 696.5"
+*ImageableArea B5/JIS B5: "12.5 12.5 503.5 716.5"
+*ImageableArea Executive/Executive: "12.5 12.5 509.5 743.5"
+*ImageableArea Folio/US Folio: "12.5 12.5 599.5 923.5"
+*ImageableArea Legal/Legal: "12.5 12.5 599.5 995.5"
+*ImageableArea Statement/Statement: "12.50 12.50 383.50 599.50"
+*ImageableArea Letter/Letter: "12.5 12.5 599.5 779.5"
+*ImageableArea Postcard/Post Card 4x6: "12.50 12.50 275.50 419.50"
+*ImageableArea EnvC5/Envelope C5: "12.5 12.5 446.5 636.5"
+*ImageableArea EnvC6/Envelope C6: "12.5 12.5 310.5 446.5"
+*ImageableArea EnvDL/Envelope DL: "12.5 12.5 299.5 611.5"
+*ImageableArea EnvMonarch/Envelope Monarch: "12.5 12.5 266.5 527.5"
+*ImageableArea Env9/Envelope No.9: "12.50 12.50 266.50 626.50"
+*ImageableArea Env10/Envelope No.10: "12.5 12.5 284.5 671.5"
+
+*% These provide the physical dimensions of the media, by option keyword.
+*DefaultPaperDimension: A4
+*PaperDimension A4/A4: "595 842"
+*PaperDimension A5/A5: "420 595"
+*PaperDimension A6/A6: "297 420"
+*PaperDimension ISOB5/ISO B5: "499 709"
+*PaperDimension B5/JIS B5: "516 729"
+*PaperDimension Executive/Executive: "522 756"
+*PaperDimension Folio/US Folio: "612 936"
+*PaperDimension Legal/Legal: "612 1008"
+*PaperDimension Statement/Statement:    "396 612"
+*PaperDimension Letter/Letter: "612 792"
+*PaperDimension Postcard/Post Card 4x6: "288 432"
+*PaperDimension EnvC5/Envelope C5: "459 649"
+*PaperDimension EnvC6/Envelope C6: "323 459"
+*PaperDimension EnvDL/Envelope DL: "312 624"
+*PaperDimension EnvMonarch/Envelope Monarch: "279 540"
+*PaperDimension Env9/Envelope No.9: "279 639"
+*PaperDimension Env10/Envelope No.10: "297 684"
+*RequiresPageRegion All: True
+
+*% The SL-M4020ND always comes with a duplexer.
+*JCLOpenUI *Duplex/Double-sided printing: PickOne
+*OrderDependency: 50 JCLSetup *Duplex
+*DefaultDuplex: DuplexNoTumble
+*Duplex None/One side: "@PJL SET DUPLEX=OFF<0A>"
+*Duplex DuplexNoTumble/Two sides, long-edge binding: "@PJL SET DUPLEX=ON<0A>@PJL SET BINDING=LONGEDGE<0A>"
+*Duplex DuplexTumble/Two sides, short-edge binding: "@PJL SET DUPLEX=ON<0A>@PJL SET BINDING=SHORTEDGE<0A>"
+*JCLCloseUI: *Duplex
+
+*JCLOpenUI *InputSlot/Paper source: PickOne
+*OrderDependency: 50 JCLSetup *InputSlot
+*DefaultInputSlot: Auto
+*InputSlot Auto/Automatic (normal): "@PJL SET MEDIASOURCE=DEFAULT<0A>"
+*InputSlot Upper/Standard tray (250 sheets): "@PJL SET MEDIASOURCE=TRAY1<0A>"
+*InputSlot Lower/Optional tray (520 sheets): "@PJL SET MEDIASOURCE=TRAY2<0A>"
+*InputSlot Manual/Manual feed (50 sheets, 60-220gsm): "@PJL SET MEDIASOURCE=MPF<0A>"
+*JCLCloseUI: *InputSlot
+
+*JCLOpenUI *JCLResolution/Resolution: PickOne
+*OrderDependency: 10 JCLSetup *JCLResolution
+*DefaultJCLResolution: 1200dpi
+*JCLResolution 1200dpi/1200dpi Very fine (normal): "@PJL SET RESOLUTION=1200<0A>"
+*JCLResolution 600dpi/600dpi Fine: "@PJL SET RESOLUTION=600<0A>"
+*JCLCloseUI: *JCLResolution
+
+*% @PJL INFO VARIABLES
+*%  TONERSAVE=ON[2 ENUMERATED]
+*%   OFF
+*%   ON
+*% @PJL DINQUIRE TONERSAVE 
+*%  ON
+*JCLOpenUI *TonerSave/Toner save: PickOne
+*OrderDependency: 40 JCLSetup *TonerSave
+*DefaultTonerSave: None
+*TonerSave None/No change: ""
+*TonerSave Off/Off (darker): "@PJL SET TONERSAVE=OFF<0A>"
+*TonerSave On/On (normal): "@PJL SET TONERSAVE=ON<0A>"
+*JCLCloseUI: *TonerSave
+
+*% @PJL INFO VARIABLES
+*%  ECONOMODE=ON[2 ENUMERATED]
+*%   OFF
+*%   ON
+*% @PJL DINQUIRE ECONOMODE
+*%  ON
+*JCLOpenUI *Economode/Economode: PickOne
+*OrderDependency: 40 JCLSetup *Economode
+*DefaultEconomode: None
+*Economode None/No change: ""
+*Economode Off/Off (darker): "@PJL SET ECONOMODE=OFF<0A>"
+*Economode On/On (normal): "@PJL SET ECONOMODE=ON<0A>"
+*JCLCloseUI: *Economode
+
+*% @PJL INFO VARIABLES
+*%  DENSITY=3[10 ENUMERATED]
+*%   1
+*%   2
+*%   3
+*%   4
+*%   5
+*%   6
+*%   7
+*%   8
+*%   9
+*%   10
+*% @PJL DINQUIRE DENSITY
+*%  3
+*JCLOpenUI *Density/Density: PickOne
+*OrderDependency: 40 JCLSetup *Density
+*DefaultDensity: None
+*Density None/No change: ""
+*Density 1/1 (lightest): "@PJL SET DENSITY=1<0A>"
+*Density 2/2: "@PJL SET DENSITY=2<0A>"
+*Density 3/3 (normal): "@PJL SET DENSITY=3<0A>"
+*Density 4/4: "@PJL SET DENSITY=4<0A>"
+*Density 5/5: "@PJL SET DENSITY=5<0A>"
+*Density 6/6: "@PJL SET DENSITY=6<0A>"
+*Density 7/7: "@PJL SET DENSITY=7<0A>"
+*Density 8/8: "@PJL SET DENSITY=8<0A>"
+*Density 9/9: "@PJL SET DENSITY=9<0A>"
+*Density 10/10 (darkest): "@PJL SET DENSITY=10<0A>"
+*JCLCloseUI: *Density
+
+*% @PJL INFO VARIABLES
+*%  BITSPERPIXEL=2[3 ENUMERATED]
+*%   1
+*%   2
+*%   4
+*% @PJL DINQUIRE BITSPERPIXEL 
+*%  2 
+*JCLOpenUI *BitsPerPixel/Bits per pixel: PickOne
+*OrderDependency: 40 JCLSetup *BitsPerPixel
+*DefaultBitsPerPixel: None
+*BitsPerPixel None/No change: ""
+*BitsPerPixel 1/1bpp No shading: "@PJL SET BITSPERPIXEL=1<0A>"
+*BitsPerPixel 2/2bpp Four shades (normal): "@PJL SET BITSPERPIXEL=2<0A>"
+*BitsPerPixel 4/4bpp Sixteen shades: "@PJL SET BITSPERPIXEL=4<0A>"
+*JCLCloseUI: *BitsPerPixel
+
+*CloseGroup: General
+
+
+*OpenGroup: InstallableOptions
+
+*% Samsung part ML-MEM370 is a 512MB RAM upgrade for the SL-M4020ND
+*% It's listed as a DDR3 part. If anyone cares to share the RAM's
+*% specifications they'd be doing the world a service.
+*OpenUI *InstalledMemory/Memory: PickOne
+*DefaultInstalledMemory: 256MB
+*InstalledMemory 256MB/256MB standard: ""
+*InstalledMemory 512MB/512MB part ML-MEM370: ""
+*CloseUI: *InstalledMemory
+
+*% Samsung part SL-SCF3800 is a second paper tray for the SL-M4020ND
+*% holding 520 sheets.
+*OpenUI *OptionalTray2/Second paper tray: Boolean
+*DefaultOptionalTray2: False
+*OptionalTray2 False/None: ""
+*OptionalTray2 True/Part SL-SCF3800: ""
+*CloseUI: *OptionalTray2
+
+*CloseGroup: InstallableOptions
+
+*% Don't offer the optional paper tray if it is not installed.
+
+*UIConstraints: *OptionalTray2 False *InputSlot Lower
+*UIConstraints: *InputSlot Lower *OptionalTray2 False
+
+*% The printer will only duplex A4 and Letter
+*UIConstraints: *PageSize A5 *Duplex DuplexNoTumble
+*UIConstraints: *PageSize A5 *Duplex DuplexTumble
+*UIConstraints: *PageRegion A5 *Duplex DuplexNoTumble
+*UIConstraints: *PageRegion A5 *Duplex DuplexTumble
+*UIConstraints: *Duplex DuplexNoTumble *PageSize A5
+*UIConstraints: *Duplex DuplexTumble *PageSize A5
+*UIConstraints: *Duplex DuplexNoTumble *PageRegion A5
+*UIConstraints: *Duplex DuplexTumble *PageRegion A5
+
+*UIConstraints: *PageSize A6 *Duplex DuplexNoTumble
+*UIConstraints: *PageSize A6 *Duplex DuplexTumble
+*UIConstraints: *PageRegion A6 *Duplex DuplexNoTumble
+*UIConstraints: *PageRegion A6 *Duplex DuplexTumble
+*UIConstraints: *Duplex DuplexNoTumble *PageSize A6
+*UIConstraints: *Duplex DuplexTumble *PageSize A6
+*UIConstraints: *Duplex DuplexNoTumble *PageRegion A6
+*UIConstraints: *Duplex DuplexTumble *PageRegion A6
+
+*UIConstraints: *PageSize ISOB5 *Duplex DuplexNoTumble
+*UIConstraints: *PageSize ISOB5 *Duplex DuplexTumble
+*UIConstraints: *PageRegion ISOB5 *Duplex DuplexNoTumble
+*UIConstraints: *PageRegion ISOB5 *Duplex DuplexTumble
+*UIConstraints: *Duplex DuplexNoTumble *PageSize ISOB5
+*UIConstraints: *Duplex DuplexTumble *PageSize ISOB5
+*UIConstraints: *Duplex DuplexNoTumble *PageRegion ISOB5
+*UIConstraints: *Duplex DuplexTumble *PageRegion ISOB5
+
+*UIConstraints: *PageSize B5 *Duplex DuplexNoTumble
+*UIConstraints: *PageSize B5 *Duplex DuplexTumble
+*UIConstraints: *PageRegion B5 *Duplex DuplexNoTumble
+*UIConstraints: *PageRegion B5 *Duplex DuplexTumble
+*UIConstraints: *Duplex DuplexNoTumble *PageSize B5
+*UIConstraints: *Duplex DuplexTumble *PageSize B5
+*UIConstraints: *Duplex DuplexNoTumble *PageRegion B5
+*UIConstraints: *Duplex DuplexTumble *PageRegion B5
+
+*UIConstraints: *PageSize Executive *Duplex DuplexNoTumble
+*UIConstraints: *PageSize Executive *Duplex DuplexTumble
+*UIConstraints: *PageRegion Executive *Duplex DuplexNoTumble
+*UIConstraints: *PageRegion Executive *Duplex DuplexTumble
+*UIConstraints: *Duplex DuplexNoTumble *PageSize Executive
+*UIConstraints: *Duplex DuplexTumble *PageSize Executive
+*UIConstraints: *Duplex DuplexNoTumble *PageRegion Executive
+*UIConstraints: *Duplex DuplexTumble *PageRegion Executive
+
+*UIConstraints: *PageSize Folio *Duplex DuplexNoTumble
+*UIConstraints: *PageSize Folio *Duplex DuplexTumble
+*UIConstraints: *PageRegion Folio *Duplex DuplexNoTumble
+*UIConstraints: *PageRegion Folio *Duplex DuplexTumble
+*UIConstraints: *Duplex DuplexNoTumble *PageSize Folio
+*UIConstraints: *Duplex DuplexTumble *PageSize Folio
+*UIConstraints: *Duplex DuplexNoTumble *PageRegion Folio
+*UIConstraints: *Duplex DuplexTumble *PageRegion Folio
+
+*UIConstraints: *PageSize Legal *Duplex DuplexNoTumble
+*UIConstraints: *PageSize Legal *Duplex DuplexTumble
+*UIConstraints: *PageRegion Legal *Duplex DuplexNoTumble
+*UIConstraints: *PageRegion Legal *Duplex DuplexTumble
+*UIConstraints: *Duplex DuplexNoTumble *PageSize Legal
+*UIConstraints: *Duplex DuplexTumble *PageSize Legal
+*UIConstraints: *Duplex DuplexNoTumble *PageRegion Legal
+*UIConstraints: *Duplex DuplexTumble *PageRegion Legal
+
+*UIConstraints: *PageSize Statement *Duplex DuplexNoTumble
+*UIConstraints: *PageSize Statement *Duplex DuplexTumble
+*UIConstraints: *PageRegion Statement *Duplex DuplexNoTumble
+*UIConstraints: *PageRegion Statement *Duplex DuplexTumble
+*UIConstraints: *Duplex DuplexNoTumble *PageSize Statement
+*UIConstraints: *Duplex DuplexTumble *PageSize Statement
+*UIConstraints: *Duplex DuplexNoTumble *PageRegion Statement
+*UIConstraints: *Duplex DuplexTumble *PageRegion Statement
+
+*UIConstraints: *PageSize Postcard *Duplex DuplexNoTumble
+*UIConstraints: *PageSize Postcard *Duplex DuplexTumble
+*UIConstraints: *PageRegion Postcard *Duplex DuplexNoTumble
+*UIConstraints: *PageRegion Postcard *Duplex DuplexTumble
+*UIConstraints: *Duplex DuplexNoTumble *PageSize Postcard
+*UIConstraints: *Duplex DuplexTumble *PageSize Postcard
+*UIConstraints: *Duplex DuplexNoTumble *PageRegion Postcard
+*UIConstraints: *Duplex DuplexTumble *PageRegion Postcard
+
+*UIConstraints: *PageSize EnvC5 *Duplex DuplexNoTumble
+*UIConstraints: *PageSize EnvC5 *Duplex DuplexTumble
+*UIConstraints: *PageRegion EnvC5 *Duplex DuplexNoTumble
+*UIConstraints: *PageRegion EnvC5 *Duplex DuplexTumble
+*UIConstraints: *Duplex DuplexNoTumble *PageSize EnvC5
+*UIConstraints: *Duplex DuplexTumble *PageSize EnvC5
+*UIConstraints: *Duplex DuplexNoTumble *PageRegion EnvC5
+*UIConstraints: *Duplex DuplexTumble *PageRegion EnvC5
+
+*UIConstraints: *PageSize EnvC6 *Duplex DuplexNoTumble
+*UIConstraints: *PageSize EnvC6 *Duplex DuplexTumble
+*UIConstraints: *PageRegion EnvC6 *Duplex DuplexNoTumble
+*UIConstraints: *PageRegion EnvC6 *Duplex DuplexTumble
+*UIConstraints: *Duplex DuplexNoTumble *PageSize EnvC6
+*UIConstraints: *Duplex DuplexTumble *PageSize EnvC6
+*UIConstraints: *Duplex DuplexNoTumble *PageRegion EnvC6
+*UIConstraints: *Duplex DuplexTumble *PageRegion EnvC6
+
+*UIConstraints: *PageSize EnvDL *Duplex DuplexNoTumble
+*UIConstraints: *PageSize EnvDL *Duplex DuplexTumble
+*UIConstraints: *PageRegion EnvDL *Duplex DuplexNoTumble
+*UIConstraints: *PageRegion EnvDL *Duplex DuplexTumble
+*UIConstraints: *Duplex DuplexNoTumble *PageSize EnvDL
+*UIConstraints: *Duplex DuplexTumble *PageSize EnvDL
+*UIConstraints: *Duplex DuplexNoTumble *PageRegion EnvDL
+*UIConstraints: *Duplex DuplexTumble *PageRegion EnvDL
+
+*UIConstraints: *PageSizeEnvMonarch *Duplex DuplexNoTumble
+*UIConstraints: *PageSizeEnvMonarch *Duplex DuplexTumble
+*UIConstraints: *PageRegionEnvMonarch *Duplex DuplexNoTumble
+*UIConstraints: *PageRegionEnvMonarch *Duplex DuplexTumble
+*UIConstraints: *Duplex DuplexNoTumble *PageSizeEnvMonarch
+*UIConstraints: *Duplex DuplexTumble *PageSizeEnvMonarch
+*UIConstraints: *Duplex DuplexNoTumble *PageRegionEnvMonarch
+*UIConstraints: *Duplex DuplexTumble *PageRegionEnvMonarch
+
+*UIConstraints: *PageSize Env9 *Duplex DuplexNoTumble
+*UIConstraints: *PageSize Env9 *Duplex DuplexTumble
+*UIConstraints: *PageRegion Env9 *Duplex DuplexNoTumble
+*UIConstraints: *PageRegion Env9 *Duplex DuplexTumble
+*UIConstraints: *Duplex DuplexNoTumble *PageSize Env9
+*UIConstraints: *Duplex DuplexTumble *PageSize Env9
+*UIConstraints: *Duplex DuplexNoTumble *PageRegion Env9
+*UIConstraints: *Duplex DuplexTumble *PageRegion Env9
+
+*UIConstraints: *PageSize Env10 *Duplex DuplexNoTumble
+*UIConstraints: *PageSize Env10 *Duplex DuplexTumble
+*UIConstraints: *PageRegion Env10 *Duplex DuplexNoTumble
+*UIConstraints: *PageRegion Env10 *Duplex DuplexTumble
+*UIConstraints: *Duplex DuplexNoTumble *PageSize Env10
+*UIConstraints: *Duplex DuplexTumble *PageSize Env10
+*UIConstraints: *Duplex DuplexNoTumble *PageRegion Env10
+*UIConstraints: *Duplex DuplexTumble *PageRegion Env10
+
+*% Fonts
+*% No idea, so the standard PDF fonts since it claims to be a PDF printer
+*DefaultFont: Courier
+*Font AvantGarde-Book: Standard "(001.006S)" Standard ROM
+*Font AvantGarde-BookOblique: Standard "(001.006S)" Standard ROM
+*Font AvantGarde-Demi: Standard "(001.007S)" Standard ROM
+*Font AvantGarde-DemiOblique: Standard "(001.007S)" Standard ROM
+*Font Bookman-Demi: Standard "(001.004S)" Standard ROM
+*Font Bookman-DemiItalic: Standard "(001.004S)" Standard ROM
+*Font Bookman-Light: Standard "(001.004S)" Standard ROM
+*Font Bookman-LightItalic: Standard "(001.004S)" Standard ROM
+*Font Courier: Standard "(002.004S)" Standard ROM
+*Font Courier-Bold: Standard "(002.004S)" Standard ROM
+*Font Courier-BoldOblique: Standard "(002.004S)" Standard ROM
+*Font Courier-Oblique: Standard "(002.004S)" Standard ROM
+*Font Helvetica: Standard "(001.006S)" Standard ROM
+*Font Helvetica-Bold: Standard "(001.007S)" Standard ROM
+*Font Helvetica-BoldOblique: Standard "(001.007S)" Standard ROM
+*Font Helvetica-Narrow: Standard "(001.006S)" Standard ROM
+*Font Helvetica-Narrow-Bold: Standard "(001.007S)" Standard ROM
+*Font Helvetica-Narrow-BoldOblique: Standard "(001.007S)" Standard ROM
+*Font Helvetica-Narrow-Oblique: Standard "(001.006S)" Standard ROM
+*Font Helvetica-Oblique: Standard "(001.006S)" Standard ROM
+*Font NewCenturySchlbk-Bold: Standard "(001.009S)" Standard ROM
+*Font NewCenturySchlbk-BoldItalic: Standard "(001.007S)" Standard ROM
+*Font NewCenturySchlbk-Italic: Standard "(001.006S)" Standard ROM
+*Font NewCenturySchlbk-Roman: Standard "(001.007S)" Standard ROM
+*Font Palatino-Bold: Standard "(001.005S)" Standard ROM
+*Font Palatino-BoldItalic: Standard "(001.005S)" Standard ROM
+*Font Palatino-Italic: Standard "(001.005S)" Standard ROM
+*Font Palatino-Roman: Standard "(001.005S)" Standard ROM
+*Font Symbol: Special "(001.007S)" Special ROM
+*Font Times-Bold: Standard "(001.007S)" Standard ROM
+*Font Times-BoldItalic: Standard "(001.009S)" Standard ROM
+*Font Times-Italic: Standard "(001.007S)" Standard ROM
+*Font Times-Roman: Standard "(001.007S)" Standard ROM
+*Font ZapfChancery-MediumItalic: Standard "(001.007S)" Standard ROM
+*Font ZapfDingbats: Special "(001.004S)" Standard ROM
+*?FontQuery: "
+  save
+  /str 80 string dup 0 (fonts/) putinterval def
+  {count 1 gt
+    { exch dup str 6 94 getinterval cvs
+      (/) print print (:) print
+      FontDirectory exch known
+      {(Yes)}{(No)} ifelse =
+    }{exit} ifelse
+  } bind loop (*)
+  = flush restore"
+*End
+*?FontList: "save FontDirectory { pop == } bind forall flush (*) = flush restore"
